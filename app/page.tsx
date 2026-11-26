@@ -1,9 +1,36 @@
-import { getProducts } from "@/lib/products";
+"use client";
+
+import { useEffect, useState } from "react";
+import { Product } from "@/lib/products";
 import ProductCard from "@/components/ProductCard";
 
-export default async function Home() {
-  const products = await getProducts();
-  const featuredProducts = products.slice(0, 5);
+export default function Home() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function fetchProducts() {
+      try {
+        const response = await fetch(
+          "https://fakestoreapi.com/products"
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch products");
+        }
+
+        const data: Product[] = await response.json();
+        setProducts(data.slice(0, 5));
+      } catch {
+        setError("Unable to load products. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchProducts();
+  }, []);
 
   return (
     <main>
@@ -47,18 +74,32 @@ export default async function Home() {
           </div>
 
           <p className="text-sm text-gray-500">
-            {featuredProducts.length} products
+            5 products
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-          {featuredProducts.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-            />
-          ))}
-        </div>
+        {loading && (
+          <p className="py-20 text-center text-gray-500">
+            Loading products...
+          </p>
+        )}
+
+        {error && (
+          <p className="py-20 text-center text-red-500">
+            {error}
+          </p>
+        )}
+
+        {!loading && !error && (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            {products.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+              />
+            ))}
+          </div>
+        )}
       </section>
     </main>
   );
