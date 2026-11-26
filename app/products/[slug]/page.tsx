@@ -1,14 +1,64 @@
-import { getProduct } from "@/lib/products";
+"use client";
+
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { Product } from "@/lib/products";
 import FavoriteButton from "@/components/FavoriteButton";
 import Link from "next/link";
 
-export default async function ProductDetail({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = await params;
-  const product = await getProduct(slug);
+export default function ProductDetail() {
+  const params = useParams();
+  const slug = params.slug as string;
+
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function fetchProduct() {
+      try {
+        const response = await fetch(
+          `https://fakestoreapi.com/products/${slug}`
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch product");
+        }
+
+        const data: Product = await response.json();
+        setProduct(data);
+      } catch {
+        setError("Unable to load product.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchProduct();
+  }, [slug]);
+
+  if (loading) {
+    return (
+      <main className="mx-auto max-w-7xl px-6 py-24 text-center">
+        <p className="text-gray-500">Loading product...</p>
+      </main>
+    );
+  }
+
+  if (error || !product) {
+    return (
+      <main className="mx-auto max-w-7xl px-6 py-24 text-center">
+        <p className="text-red-500">{error || "Product not found."}</p>
+
+        <Link
+          href="/"
+          className="mt-6 inline-block rounded-full bg-black px-6 py-3 text-white"
+        >
+          Back to Home
+        </Link>
+      </main>
+    );
+  }
 
   return (
     <main className="mx-auto max-w-7xl px-6 py-16">
